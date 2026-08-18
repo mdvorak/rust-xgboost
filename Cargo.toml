@@ -1,3 +1,23 @@
+# xgboost-sys is a workspace member, not merely a path dependency, so that its
+# own `#[cfg(test)] mod tests` is compiled and run by a plain `cargo test` here.
+# Cargo does not build a dependency's test targets, so as a bare path dep those
+# tests never ran — which is how a call to the long-deprecated
+# XGDMatrixCreateFromFile survived in it unnoticed until XGBoost 3.4 removed the
+# entry point.
+#
+# examples/ holds standalone crates (older editions, pinned old dependency
+# versions) that are run in place by examples/runall.sh. Excluding them keeps
+# `cargo run` working inside each one and keeps their dependency trees out of
+# this workspace's lockfile.
+# `default-members` is what actually gets the sys crate tested: in a workspace
+# whose root is itself a package, a bare `cargo test` (which is what CI runs)
+# defaults to the root package alone, so membership by itself would leave those
+# tests as unrun as they were before.
+[workspace]
+members = ["xgboost-sys"]
+default-members = [".", "xgboost-sys"]
+exclude = ["examples"]
+
 [package]
 name = "xgb"
 version = "3.3.0"
