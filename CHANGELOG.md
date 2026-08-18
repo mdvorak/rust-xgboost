@@ -1,3 +1,39 @@
+# 3.4.1
+
+## Changed
+* Bundled XGBoost moved to **upstream v3.4.1**. The submodule pointed at a fork
+  (`agene0001/xgboost@serving-patches-3.3.0`) carrying three serving hot-path patches;
+  all three are now in upstream verbatim, so the fork is dropped and `.gitmodules`
+  points at `dmlc/xgboost`:
+  - cached the `MakeDeviceOrd` regexes and added a `device=cpu` fast path
+  - skipped the per-tree depth walk for single-row prediction
+  - removed redundant allocations in the JSON text parser
+* Crate versions follow the bundled XGBoost: 3.4.1.
+* `xgboost-sys` is now a workspace member and in `default-members`, so its own tests
+  run under `cargo test`. They never had, which is how a broken `read_matrix` test
+  calling the deprecated `XGDMatrixCreateFromFile` went unnoticed.
+
+## Fixed
+* Replaced the last use of `XGDMatrixCreateFromFile`, which XGBoost 3.4 removes, with
+  `XGDMatrixCreateFromURI`.
+* Prediction and logloss assertions that used a one-sided `assert!(a - b < eps)` are now
+  two-sided, so they can actually catch downward numeric drift on a version bump.
+
+## Notes on upstream 3.4 behaviour
+* Split-gain values reported by `dump_model` shift in the last few ulps (12 fields, at
+  most 6.2e-07 relative). 3.3 had a closed-form fast path for split gain in
+  `TreeEvaluator::CalcGainGivenWeight`, used when `max_delta_step == 0` and there are no
+  monotone constraints, explicitly to reduce average floating-point error; 3.4 removed it
+  when unifying the single- and multi-target split evaluators and now computes the gain
+  from the leaf weight instead. Same value algebraically, different rounding. Tree
+  structure, leaf weights, covers, predictions and metrics are all unchanged.
+* `min_child_weight` no longer gates the gain and weight calculation itself (upstream
+  #12322); it is enforced as a split constraint. No effect on the tests here, but it is
+  a behavioural change upstream flagged as breaking.
+* `booster=gblinear` and `booster=dart` remain available (still deprecated, dart still
+  remapped to gbtree). Column-split support was removed upstream; this crate never
+  exposed it.
+
 # 3.0.6 (Unreleased)
 
 ## Fixed

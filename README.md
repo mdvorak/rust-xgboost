@@ -146,13 +146,17 @@ The version number tracks the bundled XGBoost version.
 This is still a very early stage of development, so the API is changing as usability issues occur,
 or new features are supported. This is still expected to be compatible to an earlier rust-xgboost library.
 
-Builds against XGBoost 3.2.0.
+Builds against XGBoost 3.4.1.
 
 ## Use prebuilt xgboost library or build it
 
 Xgboost is kind of complicated to compile, especially when there is GPU support involved.
-It is sometimes easier to use a pre-build library. Therefore, the feature flag `use_prebuilt_xgb` is enabled by default.
-This is using a prebuilt shared library in xboost-sys/lib by default. You can also use a custom folder by defining `$XGBOOST_LIB_DIR`.
+It is sometimes easier to use a pre-build library. Therefore, the feature flag `use_prebuilt_xgb` is
+available as an alternative to the default `local_build`, which compiles libxgboost from the pinned
+submodule.
+With that feature, the library is downloaded from this repository's `v<crate version>` GitHub release
+(built from the pinned submodule by the `Release XGBoost binaries` workflow). You can also point at a
+library of your own by defining `$XGBOOST_LIB_DIR`.
 
 If you prefer to use xgboost from homebrew, which may have GPU support, your can for example define
 ```
