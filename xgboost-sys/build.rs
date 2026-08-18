@@ -80,6 +80,13 @@ fn main() {
     let wrapper_h = xgb_root.join("include").join("xgboost").join("c_api.h");
     let bindings = bindgen::Builder::default()
         .header(wrapper_h.to_string_lossy())
+        // Drop c_api.h's doxygen prose instead of copying it into the bindings.
+        // rustdoc treats those comments as Rust doc comments and extracts their C
+        // snippets as doctests, which cannot compile ("Prediction can be run in 2
+        // scenarios:" parses as Rust). `[lib] doctest = false` in Cargo.toml stops
+        // a plain `cargo test`, but an explicit `cargo test --doc` runs them
+        // anyway, so remove the source of the problem rather than only the symptom.
+        .generate_comments(false)
         .clang_arg(format!("-I{}", xgb_root.join("include").display()))
         .clang_arg(format!("-I{}", xgb_root.join("dmlc-core").join("include").display()));
 
@@ -243,6 +250,15 @@ fn main() {
         println!("cargo:rustc-link-search=native={}", dst.display());
         println!("cargo:rustc-link-search=native={}", dst.join("lib").display());
         println!("cargo:rustc-link-search=native={}", dst.join("lib64").display());
+        // bin/ is where cmake installs the *runtime* library on Windows (the
+        // staging candidates below already look there). It carries no import
+        // library, so it is not needed to link -- but cargo derives the PATH /
+        // LD_LIBRARY_PATH it gives test processes from these search dirs, and a
+        // doctest binary runs from a temporary directory rather than
+        // target/<profile>, so it cannot see the staged copy the unit-test
+        // executables rely on. Without this, `cargo test --doc` on Windows dies
+        // with STATUS_DLL_NOT_FOUND before the harness prints a single line.
+        println!("cargo:rustc-link-search=native={}", dst.join("bin").display());
         println!("cargo:rustc-link-lib=static=dmlc");
 
         let lib_file = if target.contains("windows") {

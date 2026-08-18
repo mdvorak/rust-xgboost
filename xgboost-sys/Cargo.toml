@@ -14,10 +14,10 @@ exclude = [
 ]
 
 
-# bindgen copies c_api.h's doxygen comments into the generated bindings, and the
-# C snippets in them are not valid Rust, so rustdoc's extracted doctests cannot
-# compile (e.g. the XGBoosterPredictFromDMatrix example). There is no hand-written
-# documentation in this crate to test.
+# There is no hand-written documentation in this crate to test -- it is a single
+# `include!` of generated bindings. Belt and braces alongside build.rs's
+# `generate_comments(false)`, which is what actually keeps c_api.h's doxygen
+# prose from being extracted as (uncompilable) doctests.
 [lib]
 doctest = false
 
