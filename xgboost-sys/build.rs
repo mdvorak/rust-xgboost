@@ -171,8 +171,16 @@ fn main() {
         // built artifact are the exception and opt out with XGB_BUILD_NATIVE=0.
         // The distributed release assets are unaffected — release-libs.yml
         // invokes cmake directly and never runs this script.
+        //
+        // Skipped for MSVC: `-march=native` is a GCC/Clang spelling that cl.exe
+        // does not understand. It answers `D9002: ignoring unknown option` on
+        // every translation unit, so the tuning never applied there anyway --
+        // passing it only buys thousands of warnings. MSVC's nearest equivalent
+        // is an explicit `/arch:` level, which is not a "native" detection and
+        // so is deliberately not guessed here. windows-gnu keeps the flag: that
+        // toolchain is GCC and does accept it.
         println!("cargo:rerun-if-env-changed=XGB_BUILD_NATIVE");
-        if env::var("XGB_BUILD_NATIVE").map_or(true, |v| v != "0") {
+        if env::var("XGB_BUILD_NATIVE").map_or(true, |v| v != "0") && !target.contains("msvc") {
             let flag = if target.contains("aarch64") { "-mcpu=native" } else { "-march=native" };
             dst.cflag(flag).cxxflag(flag);
         }

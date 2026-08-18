@@ -14,11 +14,19 @@ jobs:
       with:
         submodules: recursive
 
-    # Windows stays on the prebuilt-download path until binaries built from the
-    # pinned submodule are published (MSVC source build is untested in this CI).
+    # Builds libxgboost from the pinned submodule, like every other platform's
+    # workflow. release-libs.yml already proves the cmake build itself works
+    # under MSVC; what was never exercised is the `local_build` path through
+    # build.rs, which is a different invocation (cmake crate, an install step,
+    # extra -D defines, and a `static=dmlc` link). Running it here is what makes
+    # CI independent of the prebuilt release assets.
+    #
+    # Ninja is deliberately not installed: build.rs picks it up from PATH if
+    # present, and the generator proven on Windows is the Visual Studio one that
+    # release-libs.yml uses.
     - name: Build
-      run: cargo build --verbose --no-default-features --features use_prebuilt_xgb
+      run: cargo build --verbose
 
     - name: Run tests
-      run: cargo test --verbose --no-default-features --features use_prebuilt_xgb
+      run: cargo test --verbose
       

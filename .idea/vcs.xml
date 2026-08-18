@@ -4,6 +4,5 @@
     <mapping directory="" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/xgboost-sys/xgboost" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/xgboost-sys/xgboost/dmlc-core" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/xgboost-sys/xgboost/gputreeshap" vcs="Git" />
   </component>
 </project>
