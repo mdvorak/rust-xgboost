@@ -16,6 +16,35 @@ mod tests {
             .into_owned()
     }
 
+    /// The linked libxgboost must be the version this crate says it bundles.
+    ///
+    /// build.rs compares CARGO_PKG_VERSION against the submodule's
+    /// version_config.h, but that only checks the *headers* bindgen read. It
+    /// cannot catch cargo handing us a stale cached libxgboost from a previous
+    /// pin, which has happened here before and surfaced far from the cause (a
+    /// version-skewed library showed up as "Unknown objective function").
+    /// Asking the loaded library itself is the only check that covers the
+    /// artifact actually linked.
+    ///
+    /// Note this is deliberately stricter than build.rs, which only warns so that
+    /// an intentional skew (a pre-release submodule pin, or a user-supplied
+    /// XGBOOST_LIB_DIR) still *builds*. Building against a skewed library stays
+    /// allowed; this crate's own test suite just does not claim to pass against
+    /// one, since the pinned numerics elsewhere assume the bundled version.
+    #[test]
+    fn linked_library_version_matches_crate_version() {
+        let (mut major, mut minor, mut patch) = (0, 0, 0);
+        unsafe { XGBoostVersion(&mut major, &mut minor, &mut patch) };
+        let linked = format!("{major}.{minor}.{patch}");
+        assert_eq!(
+            linked,
+            env!("CARGO_PKG_VERSION"),
+            "linked libxgboost is {linked} but this crate declares \
+             {}; cargo may be reusing a library built from an older submodule pin",
+            env!("CARGO_PKG_VERSION")
+        );
+    }
+
     #[test]
     fn read_matrix() {
         // `XGDMatrixCreateFromURI` takes a JSON config, not a bare path, and the
